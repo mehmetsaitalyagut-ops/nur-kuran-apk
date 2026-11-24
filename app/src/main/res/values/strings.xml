@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">NUR – Kur’an-ı Kerim</string>
+    <string name="bismillah_ar">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</string>
+    <string name="bismillah_tr">Rahmân ve Rahîm olan Allah’ın adıyla</string>
+    <string name="nav_home">Ana Sayfa</string>
+    <string name="nav_surahs">Sureler</string>
+    <string name="nav_reader">Oku</string>
+    <string name="nav_favorites">Favoriler</string>
+    <string name="nav_ibadat">İbadet</string>
+    <string name="auth_title">NUR – Kur’an-ı Kerim</string>
+    <string name="auth_subtitle">Huzurla dinle, oku ve günlük ibadetini takip et</string>
+    <string name="auth_sign_in_google">Google ile Giriş Yap</string>
+    <string name="cd_play_pause">Oynat veya duraklat</string>
+    <string name="cd_previous_surah">Önceki sure</string>
+    <string name="cd_next_surah">Sonraki sure</string>
+    <string name="cd_rewind_10">10 saniye geri sar</string>
+    <string name="cd_forward_10">10 saniye ileri sar</string>
+    <string name="cd_stop_playback">Oynatmayı durdur</string>
+    <string name="cd_favorite">Favorilere ekle veya çıkar</string>
+    <string name="cd_search">Ara</string>
+    <string name="cd_theme_toggle">Tema değiştir</string>
+    <string name="cd_expand_player">Tam ekran oynatıcıyı aç</string>
+    <string name="cd_collapse_player">Tam ekran oynatıcıyı kapat</string>
+</resources>

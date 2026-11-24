@@ -1,0 +1,6 @@
+{
+  "name": "NUR – Kur’an-ı Kerim",
+  "description": "Kur’an-ı Kerim dinleme, Arapça metin ve Türkçe meal okuma, hafız seçimi, favoriler ve günlük ibadet/hatim takip uygulaması.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

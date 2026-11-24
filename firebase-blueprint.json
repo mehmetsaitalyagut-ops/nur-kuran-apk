@@ -1,0 +1,136 @@
+{
+  "entities": {
+    "UserPreferences": {
+      "title": "UserPreferences",
+      "description": "Kullanıcının tema, seçili hafız, günlük hedefler, son kaldığı yer ve hatim cüz ilerlemesi.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase UID" },
+        "selectedReciterId": { "type": "string", "description": "Selected reciter edition ID" },
+        "darkTheme": { "type": "boolean", "description": "Dark theme preference" },
+        "dailyReadGoalAyahs": { "type": "integer", "description": "Daily ayah reading target" },
+        "dailyListenGoalMinutes": { "type": "integer", "description": "Daily listening target in minutes" },
+        "lastSurahNumber": { "type": "integer", "description": "Last read or listened surah number (1-114)" },
+        "lastSurahNameTr": { "type": "string", "description": "Last surah Turkish name" },
+        "lastAyahNumber": { "type": "integer", "description": "Last read or listened ayah number" },
+        "lastReciterId": { "type": "string", "description": "Last reciter edition ID" },
+        "lastPlaybackPositionMs": { "type": "integer", "description": "Last playback position in milliseconds" },
+        "completedJuzs": { "type": "array", "description": "List of completed Juz numbers (1-30)" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp" }
+      },
+      "required": [
+        "userId",
+        "selectedReciterId",
+        "darkTheme",
+        "dailyReadGoalAyahs",
+        "dailyListenGoalMinutes",
+        "lastSurahNumber",
+        "lastSurahNameTr",
+        "lastAyahNumber",
+        "lastReciterId",
+        "lastPlaybackPositionMs",
+        "completedJuzs",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FavoriteItem": {
+      "title": "FavoriteItem",
+      "description": "Favori sure veya ayet kaydı.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase UID" },
+        "kind": { "type": "string", "enum": ["surah", "ayah"], "description": "Favorite item type" },
+        "surahNumber": { "type": "integer", "description": "Surah number 1-114" },
+        "surahNameTr": { "type": "string", "description": "Turkish name of the surah" },
+        "surahNameAr": { "type": "string", "description": "Arabic name of the surah" },
+        "ayahNumber": { "type": "integer", "description": "Ayah number (0 for surah favorites)" },
+        "arabicText": { "type": "string", "description": "Optional Arabic text of favorite ayah" },
+        "turkishText": { "type": "string", "description": "Optional Turkish translation of favorite ayah" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp" }
+      },
+      "required": [
+        "userId",
+        "kind",
+        "surahNumber",
+        "surahNameTr",
+        "surahNameAr",
+        "ayahNumber",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ListeningHistoryItem": {
+      "title": "ListeningHistoryItem",
+      "description": "Kullanıcının son dinlediği sureler ve kaldığı ayet bilgisi.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase UID" },
+        "surahNumber": { "type": "integer", "description": "Surah number 1-114" },
+        "surahNameTr": { "type": "string", "description": "Turkish name of the surah" },
+        "surahNameAr": { "type": "string", "description": "Arabic name of the surah" },
+        "reciterId": { "type": "string", "description": "Reciter edition ID" },
+        "reciterName": { "type": "string", "description": "Reciter display name" },
+        "ayahNumber": { "type": "integer", "description": "Last listened ayah number" },
+        "listenCount": { "type": "integer", "description": "Number of listening sessions" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp" }
+      },
+      "required": [
+        "userId",
+        "surahNumber",
+        "surahNameTr",
+        "surahNameAr",
+        "reciterId",
+        "reciterName",
+        "ayahNumber",
+        "listenCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DailyIbadatRecord": {
+      "title": "DailyIbadatRecord",
+      "description": "Günlük okunan ayet ve dinleme süresi ibadet takibi.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase UID" },
+        "dateKey": { "type": "string", "description": "ISO date string YYYY-MM-DD" },
+        "ayahsRead": { "type": "integer", "description": "Ayahs read on this day" },
+        "listenedSeconds": { "type": "integer", "description": "Seconds listened on this day" },
+        "completedDailyGoal": { "type": "boolean", "description": "Whether daily worship goal was reached" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp" }
+      },
+      "required": [
+        "userId",
+        "dateKey",
+        "ayahsRead",
+        "listenedSeconds",
+        "completedDailyGoal",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/UserPreferences" },
+      "description": "User preferences, goals, resume bookmark, and completed Juz list"
+    },
+    "/users/{userId}/favorites/{favId}": {
+      "schema": { "$ref": "#/entities/FavoriteItem" },
+      "description": "User favorite surahs and verses"
+    },
+    "/users/{userId}/history/{historyId}": {
+      "schema": { "$ref": "#/entities/ListeningHistoryItem" },
+      "description": "User surah listening history"
+    },
+    "/users/{userId}/daily_ibadat/{dateKey}": {
+      "schema": { "$ref": "#/entities/DailyIbadatRecord" },
+      "description": "Daily worship progress logs keyed by YYYY-MM-DD"
+    }
+  }
+}

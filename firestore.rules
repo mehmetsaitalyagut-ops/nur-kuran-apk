@@ -1,0 +1,212 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserPreferences(data, userId) {
+      return data.userId == userId &&
+        data.selectedReciterId is string && data.selectedReciterId.size() >= 1 && data.selectedReciterId.size() <= 64 &&
+        data.darkTheme is bool &&
+        data.dailyReadGoalAyahs is int && data.dailyReadGoalAyahs >= 1 && data.dailyReadGoalAyahs <= 1000 &&
+        data.dailyListenGoalMinutes is int && data.dailyListenGoalMinutes >= 1 && data.dailyListenGoalMinutes <= 600 &&
+        data.lastSurahNumber is int && data.lastSurahNumber >= 1 && data.lastSurahNumber <= 114 &&
+        data.lastSurahNameTr is string && data.lastSurahNameTr.size() >= 1 && data.lastSurahNameTr.size() <= 100 &&
+        data.lastAyahNumber is int && data.lastAyahNumber >= 1 && data.lastAyahNumber <= 286 &&
+        data.lastReciterId is string && data.lastReciterId.size() >= 1 && data.lastReciterId.size() <= 64 &&
+        data.lastPlaybackPositionMs is int && data.lastPlaybackPositionMs >= 0 &&
+        data.completedJuzs is list && data.completedJuzs.size() <= 30 &&
+        (data.completedJuzs.size() == 0 || data.completedJuzs[0] is int);
+    }
+
+    function isValidFavoriteItem(data, userId) {
+      return data.userId == userId &&
+        data.kind in ['surah', 'ayah'] &&
+        data.surahNumber is int && data.surahNumber >= 1 && data.surahNumber <= 114 &&
+        data.surahNameTr is string && data.surahNameTr.size() >= 1 && data.surahNameTr.size() <= 100 &&
+        data.surahNameAr is string && data.surahNameAr.size() >= 1 && data.surahNameAr.size() <= 100 &&
+        data.ayahNumber is int && data.ayahNumber >= 0 && data.ayahNumber <= 286 &&
+        (!('arabicText' in data) || (data.arabicText is string && data.arabicText.size() <= 4000)) &&
+        (!('turkishText' in data) || (data.turkishText is string && data.turkishText.size() <= 4000));
+    }
+
+    function isValidHistoryItem(data, userId) {
+      return data.userId == userId &&
+        data.surahNumber is int && data.surahNumber >= 1 && data.surahNumber <= 114 &&
+        data.surahNameTr is string && data.surahNameTr.size() >= 1 && data.surahNameTr.size() <= 100 &&
+        data.surahNameAr is string && data.surahNameAr.size() >= 1 && data.surahNameAr.size() <= 100 &&
+        data.reciterId is string && data.reciterId.size() >= 1 && data.reciterId.size() <= 64 &&
+        data.reciterName is string && data.reciterName.size() >= 1 && data.reciterName.size() <= 100 &&
+        data.ayahNumber is int && data.ayahNumber >= 1 && data.ayahNumber <= 286 &&
+        data.listenCount is int && data.listenCount >= 1 && data.listenCount <= 1000000;
+    }
+
+    function isValidDailyIbadat(data, userId, dateKey) {
+      return data.userId == userId &&
+        data.dateKey is string && data.dateKey == dateKey && data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        data.ayahsRead is int && data.ayahsRead >= 0 && data.ayahsRead <= 10000 &&
+        data.listenedSeconds is int && data.listenedSeconds >= 0 && data.listenedSeconds <= 86400 &&
+        data.completedDailyGoal is bool;
+    }
+
+    match /users/{userId}/settings/{settingId} {
+      allow get: if isOwner(userId) && isValidId(settingId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+        isValidId(settingId) &&
+        settingId == 'preferences' &&
+        incoming().keys().hasAll([
+          'userId', 'selectedReciterId', 'darkTheme', 'dailyReadGoalAyahs',
+          'dailyListenGoalMinutes', 'lastSurahNumber', 'lastSurahNameTr',
+          'lastAyahNumber', 'lastReciterId', 'lastPlaybackPositionMs',
+          'completedJuzs', 'createdAt', 'updatedAt'
+        ]) &&
+        incoming().keys().hasOnly([
+          'userId', 'selectedReciterId', 'darkTheme', 'dailyReadGoalAyahs',
+          'dailyListenGoalMinutes', 'lastSurahNumber', 'lastSurahNameTr',
+          'lastAyahNumber', 'lastReciterId', 'lastPlaybackPositionMs',
+          'completedJuzs', 'createdAt', 'updatedAt'
+        ]) &&
+        incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        isValidUserPreferences(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+        isValidId(settingId) &&
+        settingId == 'preferences' &&
+        isValidUserPreferences(incoming(), userId) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'selectedReciterId', 'darkTheme', 'dailyReadGoalAyahs',
+          'dailyListenGoalMinutes', 'lastSurahNumber', 'lastSurahNameTr',
+          'lastAyahNumber', 'lastReciterId', 'lastPlaybackPositionMs',
+          'completedJuzs', 'updatedAt'
+        ]);
+
+      allow delete: if isOwner(userId) && isValidId(settingId);
+    }
+
+    match /users/{userId}/favorites/{favId} {
+      allow get: if isOwner(userId) && isValidId(favId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+        isValidId(favId) &&
+        incoming().keys().hasAll([
+          'userId', 'kind', 'surahNumber', 'surahNameTr', 'surahNameAr',
+          'ayahNumber', 'createdAt', 'updatedAt'
+        ]) &&
+        incoming().keys().hasOnly([
+          'userId', 'kind', 'surahNumber', 'surahNameTr', 'surahNameAr',
+          'ayahNumber', 'arabicText', 'turkishText', 'createdAt', 'updatedAt'
+        ]) &&
+        incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        isValidFavoriteItem(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+        isValidId(favId) &&
+        isValidFavoriteItem(incoming(), userId) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'surahNameTr', 'surahNameAr', 'arabicText', 'turkishText', 'updatedAt'
+        ]);
+
+      allow delete: if isOwner(userId) && isValidId(favId);
+    }
+
+    match /users/{userId}/history/{historyId} {
+      allow get: if isOwner(userId) && isValidId(historyId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+        isValidId(historyId) &&
+        incoming().keys().hasAll([
+          'userId', 'surahNumber', 'surahNameTr', 'surahNameAr',
+          'reciterId', 'reciterName', 'ayahNumber', 'listenCount',
+          'createdAt', 'updatedAt'
+        ]) &&
+        incoming().keys().hasOnly([
+          'userId', 'surahNumber', 'surahNameTr', 'surahNameAr',
+          'reciterId', 'reciterName', 'ayahNumber', 'listenCount',
+          'createdAt', 'updatedAt'
+        ]) &&
+        incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        isValidHistoryItem(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+        isValidId(historyId) &&
+        isValidHistoryItem(incoming(), userId) &&
+        incoming().userId == existing().userId &&
+        incoming().surahNumber == existing().surahNumber &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'reciterId', 'reciterName', 'ayahNumber', 'listenCount', 'updatedAt'
+        ]);
+
+      allow delete: if isOwner(userId) && isValidId(historyId);
+    }
+
+    match /users/{userId}/daily_ibadat/{dateKey} {
+      allow get: if isOwner(userId) && isValidId(dateKey);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+        isValidId(dateKey) &&
+        incoming().keys().hasAll([
+          'userId', 'dateKey', 'ayahsRead', 'listenedSeconds',
+          'completedDailyGoal', 'createdAt', 'updatedAt'
+        ]) &&
+        incoming().keys().hasOnly([
+          'userId', 'dateKey', 'ayahsRead', 'listenedSeconds',
+          'completedDailyGoal', 'createdAt', 'updatedAt'
+        ]) &&
+        incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        isValidDailyIbadat(incoming(), userId, dateKey);
+
+      allow update: if isOwner(userId) &&
+        isValidId(dateKey) &&
+        isValidDailyIbadat(incoming(), userId, dateKey) &&
+        incoming().userId == existing().userId &&
+        incoming().dateKey == existing().dateKey &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'ayahsRead', 'listenedSeconds', 'completedDailyGoal', 'updatedAt'
+        ]);
+
+      allow delete: if isOwner(userId) && isValidId(dateKey);
+    }
+  }
+}
